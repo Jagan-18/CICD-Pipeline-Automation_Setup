@@ -1,9 +1,5 @@
-# CICD-Pipeline-Automation_Setup
-Sure! Below is your complete README content formatted in markdown. You can paste this directly into your GitHub repository's README.md file:
-
-```markdown
-# Setup Instructions
-
+# CICD-Pipeline-Automation_Setup Instruction
+ 
 ## 1. Update Package List
 ```bash
 sudo apt update
@@ -266,6 +262,4 @@ sudo apt-get install trivy -y
 ```
 ```
 
----
-
-Feel free to edit the sections as needed and add any extra setup or instructions. This README should provide a thorough guide to setting up Jenkins, SonarQube, Docker, OWASP Dependency-Check, and Trivy on a Linux system.
+#### This README should provide a thorough guide to setting up Jenkins, SonarQube, Docker, OWASP Dependency-Check, and Trivy on a Linux system.
