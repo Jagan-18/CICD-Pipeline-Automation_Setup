@@ -103,7 +103,7 @@ You can use the following command to run your application:
 java -jar -Dserver.port=8081 target/*.jar
 ```
 
----
+--------------------------------------------------------------------
 
 ## Docker Installation
 
@@ -191,7 +191,7 @@ https://<IP address>:9000
 - **Password:** admin
 - **New Password:** admin123
 
----
+---------------------------------------
 
 ## Running SonarQube Scan in Jenkins
 
@@ -211,7 +211,7 @@ withSonarQubeEnv('sonar') {
 2. Confirm the location of your compiled `.class` files and adjust `sonar.java.binaries` accordingly.
 3. Ensure that your SonarQube server is configured with the correct `sonar` ID in Jenkins.
 
----
+----------------------------------
 
 ## OWASP Dependency-Check Script in Jenkins
 
@@ -232,7 +232,7 @@ dependencyCheckPublisher pattern: '**/dependency-check-report.xml'
 2. `odcInstallation: 'DC'`: Ensure `DC` matches the name of the Dependency-Check installation in Jenkins.
 3. `dependencyCheckPublisher pattern: '**/dependency-check-report.xml'`: Adjust the pattern if your report is in a different location.
 
----
+----------------------------------------
 
 ## Trivy Installation
 
