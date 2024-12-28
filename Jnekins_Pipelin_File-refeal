@@ -1,80 +1,105 @@
 pipeline {
     agent any
-    tools {
-        maven 'maven3'
+    tools{
         jdk 'jdk17'
+        maven 'maven3'
     }
     environment{
-        SCANNER_HOME=tool 'sonar-scanner'
+        SCANNER_HOME= tool 'sonar-scanner'
     }
-    
+
     stages {
-        stage('git checkout') {
+        stage('git-checkout') {
             steps {
                 git branch: 'main', url: 'https://github.com/Jagan-18/SecretSanta-Generator.git'
             }
         }
-         stage('Compile') {
+
+        stage('Code-Compile') {
             steps {
-                sh "mvn compile"
-            }
-        }
-         stage('Tests') {
-            steps {
-                sh "mvn test"
-            }
-        }
-         stage('Sonarqube Analysis') {
-            steps {
-                 withSonarQubeEnv('sonar')
-                 {
-                     sh '''
-                            $SCANNER_HOME/bin/sonar-scanner \
-                            -Dsonar.projectKey=santa \
-                            -Dsonar.projectName=santa \
-                             -Dsonar.java.binaries=target/classes
-                         '''
-                 }
-            }
-        }
-         stage('OWasp Scan') {
-            steps {
-                // Run OWASP Dependency-Check scan
-                  dependencyCheck additionalArguments: '--scan ./', odcInstallation: 'DC'
-                 // Publish the Dependency-Check report
-                  dependencyCheckPublisher pattern: '**/dependency-check-report.xml'
-            }
-        }
-        stage('Build applicaiton') {
-            steps {
-                sh 'mvn package'
-            }
-        }
-        stage('Build Docker image') {
-            steps {
-                 // Using Docker Hub registry (public repo)
-                withDockerRegistry([credentialsId: 'docker', url: 'https://index.docker.io/v1/']) {
-                    // Build the Docker image and tag it
-                    sh "docker build -t kubejaganreddy/santa:latest ."
-                }
-            }
-        }
-        stage('Tag & Push Docker image') {
-            steps {
-                withDockerRegistry([credentialsId: 'docker', url: 'https://index.docker.io/v1/']) {
-                    // Tag the image for Docker Hub repository
-                    sh "docker tag sant:latest kubejaganreddy/santa:latest"
-                    // Push the image to your Docker Hub public repository
-                    sh "docker push kubejaganreddy/santa:latest"
-                }
-            }
-        }
-        stage('Deploy Apllication') {
-            steps {
-                  // Deploy the Docker image by running the container
-                sh "docker run -d -p 8081:8080 kubejaganreddy/santa:latest"
-                }
+               sh "mvn clean compile"
             }
         }
         
-    }
+        stage('Unit Tests') {
+            steps {
+               sh "mvn test"
+            }
+        }
+        
+		stage('OWASP Dependency Check') {
+            steps {
+               dependencyCheck additionalArguments: ' --scan ./ ', odcInstallation: 'DC'
+                    dependencyCheckPublisher pattern: '**/dependency-check-report.xml'
+            }
+        }
+
+
+        stage('Sonar Analysis') {
+            steps {
+               withSonarQubeEnv('sonar'){
+                   sh ''' $SCANNER_HOME/bin/sonar-scanner -Dsonar.projectName=Santa1 \
+                   -Dsonar.java.binaries=. \
+                   -Dsonar.projectKey=Santa1 '''
+               }
+            }
+        }
+
+		 
+        stage('Code-Build') {
+            steps {
+               sh "mvn clean package"
+            }
+        }
+
+         stage('Docker Build') {
+            steps {
+               script{
+                   withDockerRegistry(credentialsId: 'docker') {
+                    sh "docker build -t kubejaganreddy/santa123:latest . "
+                 }
+               }
+            }
+        }
+
+        stage('Docker Push') {
+            steps {
+               script{
+                   withDockerRegistry(credentialsId: 'docker') {
+                    sh "docker tag santa123:latest kubejaganreddy/santa123:latest"
+                    sh "docker push kubejaganreddy/santa123:latest"
+                 }
+               }
+            }
+        }
+        
+        	 
+        stage('Docker Image Scan') {
+            steps {
+               sh "trivy image kubejaganreddy/santa123:latest "
+            }
+        }}
+        
+         post {
+            always {
+                emailext (
+                    subject: "Pipeline Status: ${BUILD_NUMBER}",
+                    body: '''<html>
+                                <body>
+                                    <p>Build Status: ${BUILD_STATUS}</p>
+                                    <p>Build Number: ${BUILD_NUMBER}</p>
+                                    <p>Check the <a href="${BUILD_URL}">console output</a>.</p>
+                                </body>
+                            </html>''',
+                    to: 'jaganmydevops18@gmail.com',
+                    from: 'jenkins@example.com',
+                    replyTo: 'jenkins@example.com',
+                    mimeType: 'text/html'
+                )
+            }
+        }
+		
+		
+
+    
+}
