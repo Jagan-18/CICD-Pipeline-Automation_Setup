@@ -1,0 +1,80 @@
+pipeline {
+    agent any
+    tools {
+        maven 'maven3'
+        jdk 'jdk17'
+    }
+    environment{
+        SCANNER_HOME=tool 'sonar-scanner'
+    }
+    
+    stages {
+        stage('git checkout') {
+            steps {
+                git branch: 'main', url: 'https://github.com/Jagan-18/SecretSanta-Generator.git'
+            }
+        }
+         stage('Compile') {
+            steps {
+                sh "mvn compile"
+            }
+        }
+         stage('Tests') {
+            steps {
+                sh "mvn test"
+            }
+        }
+         stage('Sonarqube Analysis') {
+            steps {
+                 withSonarQubeEnv('sonar')
+                 {
+                     sh '''
+                            $SCANNER_HOME/bin/sonar-scanner \
+                            -Dsonar.projectKey=santa \
+                            -Dsonar.projectName=santa \
+                             -Dsonar.java.binaries=target/classes
+                         '''
+                 }
+            }
+        }
+         stage('OWasp Scan') {
+            steps {
+                // Run OWASP Dependency-Check scan
+                  dependencyCheck additionalArguments: '--scan ./', odcInstallation: 'DC'
+                 // Publish the Dependency-Check report
+                  dependencyCheckPublisher pattern: '**/dependency-check-report.xml'
+            }
+        }
+        stage('Build applicaiton') {
+            steps {
+                sh 'mvn package'
+            }
+        }
+        stage('Build Docker image') {
+            steps {
+                 // Using Docker Hub registry (public repo)
+                withDockerRegistry([credentialsId: 'docker', url: 'https://index.docker.io/v1/']) {
+                    // Build the Docker image and tag it
+                    sh "docker build -t kubejaganreddy/santa:latest ."
+                }
+            }
+        }
+        stage('Tag & Push Docker image') {
+            steps {
+                withDockerRegistry([credentialsId: 'docker', url: 'https://index.docker.io/v1/']) {
+                    // Tag the image for Docker Hub repository
+                    sh "docker tag sant:latest kubejaganreddy/santa:latest"
+                    // Push the image to your Docker Hub public repository
+                    sh "docker push kubejaganreddy/santa:latest"
+                }
+            }
+        }
+        stage('Deploy Apllication') {
+            steps {
+                  // Deploy the Docker image by running the container
+                sh "docker run -d -p 8081:8080 kubejaganreddy/santa:latest"
+                }
+            }
+        }
+        
+    }
